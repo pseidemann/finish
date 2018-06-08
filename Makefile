@@ -3,7 +3,7 @@
 default: test
 
 lint:
-	@golint -set_exit_status
+	@golint -set_exit_status ./...
 
 test: lint
-	@go test -race
+	@go test -v -race ./...
