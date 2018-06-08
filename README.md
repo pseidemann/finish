@@ -2,6 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/pseidemann/finish?status.svg)](https://godoc.org/github.com/pseidemann/finish)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pseidemann/finish)](https://goreportcard.com/report/github.com/pseidemann/finish)
+[![Build Status](https://travis-ci.org/pseidemann/finish.svg?branch=master)](https://travis-ci.org/pseidemann/finish)
 
 Package finish provides gracious shutdown of servers.
 
