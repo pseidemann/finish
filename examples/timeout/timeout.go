@@ -1,4 +1,4 @@
-package finish_test
+package main
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/pseidemann/finish"
 )
 
-func Example() {
+func main() {
 	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(5 * time.Second)
 		fmt.Fprintln(w, "world")
@@ -17,7 +17,7 @@ func Example() {
 
 	srv := &http.Server{Addr: "localhost:8080"}
 
-	fin := finish.New()
+	fin := &finish.Finisher{Timeout: 30 * time.Second}
 	fin.Add(srv)
 
 	go func() {

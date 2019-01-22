@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"syscall"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -26,7 +27,11 @@ func main() {
 	srvPub := &http.Server{Addr: "localhost:8080", Handler: routerPub}
 	srvInt := &http.Server{Addr: "localhost:3000", Handler: routerInt}
 
-	fin := &finish.Finisher{Log: logrus.StandardLogger(), Timeout: 30 * time.Second}
+	fin := &finish.Finisher{
+		Timeout: 30 * time.Second,
+		Log:     logrus.StandardLogger(),
+		Signals: append(finish.DefaultSignals, syscall.SIGHUP),
+	}
 	fin.Add(srvPub, finish.WithName("public server"))
 	fin.Add(srvInt, finish.WithName("internal server"), finish.WithTimeout(5*time.Second))
 

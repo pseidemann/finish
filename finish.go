@@ -1,4 +1,4 @@
-// Package finish provides gracious shutdown of servers.
+// Package finish provides graceful shutdown of servers.
 package finish
 
 import (
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// DefaultTimeout is used if no timeout is given for a server.
+// DefaultTimeout is used if Finisher.Timeout is not set.
 const DefaultTimeout = 10 * time.Second
 
 var (
@@ -20,13 +20,15 @@ var (
 	// StdoutLogger can be used as a simple logger which writes to stdout via the fmt standard package.
 	StdoutLogger = &stdoutLogger{}
 	// DefaultSignals is used if Finisher.Signals is not set.
+	// The default shutdown signals are:
+	//   - SIGINT (triggered by pressing Control-C)
+	//   - SIGTERM (sent by `kill $pid` or e.g. systemd stop)
 	DefaultSignals = []os.Signal{syscall.SIGINT, syscall.SIGTERM}
 )
 
 // A Server is a type which can be shutdown.
 //
-// This interface is expected by Add() and allows registering any server which
-// implements a Shutdown() method.
+// This is the interface expected by Add() which allows registering any server which implements the Shutdown() method.
 type Server interface {
 	Shutdown(ctx context.Context) error
 }
@@ -37,10 +39,23 @@ type serverKeeper struct {
 	timeout time.Duration
 }
 
-// Finisher implements gracious shutdown of servers.
+// Finisher implements graceful shutdown of servers.
 type Finisher struct {
+	// Timeout is the maximum amount of time to wait for still running server
+	// requests to finish when the shutdown signal was received for each server.
+	// It defaults to DefaultTimeout which is 10 seconds.
+	//
+	// The timeout can be overridden on a per server basis with passing the
+	// WithTimeout() option to Add() while adding the server.
 	Timeout time.Duration
-	Log     Logger
+
+	// Log can be set to change where finish logs to.
+	// It defaults to DefaultLogger which uses the standard Go log package.
+	Log Logger
+
+	// Signals can be used to change which signals finish catches to initiate
+	// the shutdown.
+	// It defaults to DefaultSignals which contains SIGINT and SIGTERM.
 	Signals []os.Signal
 
 	mutex   sync.Mutex
@@ -48,7 +63,7 @@ type Finisher struct {
 	manSig  chan interface{}
 }
 
-// New creates a Finisher.
+// New creates a Finisher. This is a convenience constructor if no changes to the default configuration are needed.
 func New() *Finisher {
 	return &Finisher{}
 }
@@ -83,7 +98,18 @@ func (f *Finisher) getManSig() chan interface{} {
 	return f.manSig
 }
 
-// Add a server for gracious shutdown.
+// Add a server for graceful shutdown.
+//
+// Options can be passed as the second argument to change the behavior for this server:
+//
+// To give the server a specific name instead of just "server #<num>":
+// 	fin.Add(srv, finish.WithName("internal server"))
+//
+// To override the timeout, configured in Finisher, for this specific server:
+// 	fin.Add(srv, finish.WithTimeout(5*time.Second))
+//
+// To do both at the same time:
+// 	fin.Add(srv, finish.WithName("internal server"), finish.WithTimeout(5*time.Second))
 func (f *Finisher) Add(srv Server, opts ...Option) {
 	keeper := &serverKeeper{
 		srv:     srv,
@@ -99,11 +125,7 @@ func (f *Finisher) Add(srv Server, opts ...Option) {
 	f.keepers = append(f.keepers, keeper)
 }
 
-// Wait blocks until the shutdown signal is received and then closes all servers with a timeout.
-//
-// The default shutdown signals are:
-//  - SIGINT (triggered by pressing Control-C)
-//  - SIGTERM (sent by `kill $pid` or e.g. systemd stop)
+// Wait blocks until one of the shutdown signals is received and then closes all servers with a timeout.
 func (f *Finisher) Wait() {
 	f.updateNames()
 
@@ -141,7 +163,7 @@ func (f *Finisher) Wait() {
 	}
 }
 
-// Trigger the shutdown signal manually.
+// Trigger the shutdown signal manually. This is probably only useful for testing.
 func (f *Finisher) Trigger() {
 	f.getManSig() <- nil
 }
