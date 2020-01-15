@@ -4,10 +4,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/pseidemann/finish)](https://goreportcard.com/report/github.com/pseidemann/finish)
 [![Build Status](https://travis-ci.org/pseidemann/finish.svg?branch=master)](https://travis-ci.org/pseidemann/finish)
 
-Package finish provides graceful shutdown of servers.
-
-It uses `http.Server`'s built-in [`Shutdown()`](https://golang.org/pkg/net/http/#Server.Shutdown)
-method and therefore requires Go 1.8+.
+A non-intrusive package adding a graceful shutdown to Go's HTTP server by
+utilizing `http.Server`'s built-in `Shutdown()` method.
 
 
 ## Quick Start
