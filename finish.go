@@ -1,4 +1,6 @@
-// Package finish provides graceful shutdown of servers.
+// Package finish adds a graceful shutdown to Go's HTTP server.
+//
+// It utilizes http.Server's built-in Shutdown() method.
 package finish
 
 import (
