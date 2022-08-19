@@ -4,8 +4,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/pseidemann/finish)](https://goreportcard.com/report/github.com/pseidemann/finish)
 [![Build Status](https://github.com/pseidemann/finish/actions/workflows/go.yml/badge.svg)](https://github.com/pseidemann/finish/actions/workflows/go.yml)
 
-A non-intrusive package adding a graceful shutdown to Go's HTTP server by
-utilizing `http.Server`'s built-in `Shutdown()` method.
+A non-intrusive package, adding a graceful shutdown to Go's HTTP server, by
+utilizing `http.Server`'s built-in `Shutdown()` method, with zero dependencies.
 
 
 ## Quick Start
