@@ -207,7 +207,7 @@ func TestCustomSignal(t *testing.T) {
 		// trigger custom signal
 		p, err := os.FindProcess(os.Getpid())
 		if err != nil {
-			t.Fatal(err)
+			panic(err)
 		}
 		p.Signal(mySignal)
 	}()
