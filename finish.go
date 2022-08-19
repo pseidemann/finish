@@ -105,13 +105,16 @@ func (f *Finisher) getManSig() chan interface{} {
 // Options can be passed as the second argument to change the behavior for this server:
 //
 // To give the server a specific name instead of just "server #<num>":
-// 	fin.Add(srv, finish.WithName("internal server"))
+//
+//	fin.Add(srv, finish.WithName("internal server"))
 //
 // To override the timeout, configured in Finisher, for this specific server:
-// 	fin.Add(srv, finish.WithTimeout(5*time.Second))
+//
+//	fin.Add(srv, finish.WithTimeout(5*time.Second))
 //
 // To do both at the same time:
-// 	fin.Add(srv, finish.WithName("internal server"), finish.WithTimeout(5*time.Second))
+//
+//	fin.Add(srv, finish.WithName("internal server"), finish.WithTimeout(5*time.Second))
 func (f *Finisher) Add(srv Server, opts ...Option) {
 	keeper := &serverKeeper{
 		srv:     srv,
