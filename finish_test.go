@@ -1,14 +1,20 @@
 package finish
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
 )
+
+var errTest = errors.New("test error")
 
 type testServer struct {
 	shutdown bool
@@ -41,6 +47,43 @@ func (l *logRecorder) Infof(format string, args ...interface{}) {
 
 func (l *logRecorder) Errorf(format string, args ...interface{}) {
 	l.errors = append(l.errors, fmt.Sprintf(format, args...))
+}
+
+func captureStdout(f func()) string {
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		panic(err)
+	}
+
+	before := os.Stdout
+	os.Stdout = writer
+
+	f()
+
+	if err := writer.Close(); err != nil {
+		panic(err)
+	}
+
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(reader); err != nil {
+		panic(err)
+	}
+
+	if err := reader.Close(); err != nil {
+		panic(err)
+	}
+
+	os.Stdout = before
+
+	return buf.String()
+}
+
+func captureLog(f func()) string {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	f()
+	log.SetOutput(os.Stderr)
+	return buf.String()
 }
 
 func Test(t *testing.T) {
@@ -90,6 +133,53 @@ func Test(t *testing.T) {
 
 	if log.errors != nil {
 		t.Error("expected no error logs")
+	}
+}
+
+func TestDefaultLogger(t *testing.T) {
+	srv := &testServer{wait: 2 * time.Second}
+
+	fin := &Finisher{Timeout: time.Second}
+	fin.Add(srv)
+
+	go fin.Trigger()
+
+	log := captureLog(func() {
+		fin.Wait()
+	})
+
+	// using Contains() because the default logger contains timestamps
+
+	if !strings.Contains(log, "finish: shutdown signal received") {
+		t.Error("missing log")
+	}
+
+	if !strings.Contains(log, "finish: shutting down server ...") {
+		t.Error("missing log")
+	}
+
+	// trigger error to get coverage for defaultLogger's Errorf()
+	if !strings.Contains(log, "finish: shutdown timeout for server") {
+		t.Error("missing log")
+	}
+}
+
+func TestStdoutLogger(t *testing.T) {
+	srv := &testServer{wait: 2 * time.Second}
+
+	fin := &Finisher{Timeout: time.Second, Log: StdoutLogger}
+	fin.Add(srv)
+
+	go fin.Trigger()
+
+	stdout := captureStdout(func() {
+		fin.Wait()
+	})
+
+	if stdout != "finish: shutdown signal received\n"+
+		"finish: shutting down server ...\n"+
+		"finish: shutdown timeout for server\n" {
+		t.Error("wrong log")
 	}
 }
 
@@ -167,6 +257,26 @@ func TestOverridingTimeout(t *testing.T) {
 	}
 }
 
+func TestOptionError(t *testing.T) {
+	testOpt := func(keeper *serverKeeper) error {
+		return errTest
+	}
+
+	srv := &testServer{}
+
+	fin := New()
+	func() {
+		defer func() {
+			err := recover()
+			if err != errTest {
+				t.Error("expected Add() to panic")
+			}
+		}()
+
+		fin.Add(srv, testOpt)
+	}()
+}
+
 func TestSlowServer(t *testing.T) {
 	srv := &testServer{wait: 2 * time.Second}
 	log := &logRecorder{}
@@ -189,6 +299,76 @@ func TestSlowServer(t *testing.T) {
 		"finish: shutdown timeout for server",
 	}) {
 		t.Error("wrong error log output")
+	}
+}
+
+type testServerErr struct{}
+
+func (t *testServerErr) Shutdown(ctx context.Context) error {
+	return errTest
+}
+
+func TestServerError(t *testing.T) {
+	srv := &testServerErr{}
+	log := &logRecorder{}
+
+	fin := &Finisher{Log: log}
+	fin.Add(srv, WithTimeout(time.Second))
+
+	go fin.Trigger()
+
+	fin.Wait()
+
+	if !reflect.DeepEqual(log.infos, []string{
+		"finish: shutdown signal received",
+		"finish: shutting down server ...",
+	}) {
+		t.Error("wrong log output")
+	}
+
+	if !reflect.DeepEqual(log.errors, []string{
+		"finish: error while shutting down server: test error",
+	}) {
+		t.Error("wrong error log output")
+	}
+}
+
+func TestSigIntPrint(t *testing.T) {
+	srv := &testServer{}
+	log := &logRecorder{}
+
+	fin := &Finisher{Log: log}
+	fin.Add(srv)
+
+	go func() {
+		// sleep so Wait() can actually catch the signal
+		time.Sleep(time.Second)
+		// trigger signal
+		p, err := os.FindProcess(os.Getpid())
+		if err != nil {
+			panic(err)
+		}
+		p.Signal(syscall.SIGINT)
+	}()
+
+	stdout := captureStdout(func() {
+		fin.Wait()
+	})
+
+	if stdout != "\n" {
+		t.Error("expected newline to be printed to stdout")
+	}
+
+	if !reflect.DeepEqual(log.infos, []string{
+		"finish: shutdown signal received",
+		"finish: shutting down server ...",
+		"finish: server closed",
+	}) {
+		t.Error("wrong log output")
+	}
+
+	if log.errors != nil {
+		t.Error("expected no error logs")
 	}
 }
 
