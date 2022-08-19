@@ -13,13 +13,15 @@ import (
 	"time"
 )
 
-// DefaultTimeout is used if Finisher.Timeout is not set.
+// DefaultTimeout is used if [Finisher].Timeout is not set.
 const DefaultTimeout = 10 * time.Second
 
 var (
-	// DefaultLogger is used if Finisher.Logger is not set. It uses the Go standard log package.
+	// DefaultLogger is used if Finisher.Logger is not set.
+	// It uses the Go standard log package.
 	DefaultLogger = &defaultLogger{}
-	// StdoutLogger can be used as a simple logger which writes to stdout via the fmt standard package.
+	// StdoutLogger can be used as a simple logger which writes to stdout
+	// via the fmt standard package.
 	StdoutLogger = &stdoutLogger{}
 	// DefaultSignals is used if Finisher.Signals is not set.
 	// The default shutdown signals are:
@@ -30,7 +32,7 @@ var (
 
 // A Server is a type which can be shutdown.
 //
-// This is the interface expected by Add() which allows registering any server which implements the Shutdown() method.
+// This is the interface expected by [Finisher.Add], which allows registering any server which implements the Shutdown() method.
 type Server interface {
 	Shutdown(ctx context.Context) error
 }
@@ -43,11 +45,13 @@ type serverKeeper struct {
 
 // Finisher implements graceful shutdown of servers.
 type Finisher struct {
-	// Timeout is the maximum amount of time to wait for still running server
-	// requests to finish when the shutdown signal was received for each server.
+	// Timeout is the maximum amount of time to wait for
+	// still running server requests to finish,
+	// when the shutdown signal was received for each server.
+	//
 	// It defaults to DefaultTimeout which is 10 seconds.
 	//
-	// The timeout can be overridden on a per server basis with passing the
+	// The timeout can be overridden on a per-server basis with passing the
 	// WithTimeout() option to Add() while adding the server.
 	Timeout time.Duration
 
@@ -65,7 +69,9 @@ type Finisher struct {
 	manSig  chan interface{}
 }
 
-// New creates a Finisher. This is a convenience constructor if no changes to the default configuration are needed.
+// New creates a Finisher.
+//
+// This is a convenience constructor if no changes to the default configuration are needed.
 func New() *Finisher {
 	return &Finisher{}
 }
@@ -104,7 +110,7 @@ func (f *Finisher) getManSig() chan interface{} {
 //
 // Options can be passed as the second argument to change the behavior for this server:
 //
-// To give the server a specific name instead of just "server #<num>":
+// To give the server a specific name instead of just “server #<num>”:
 //
 //	fin.Add(srv, finish.WithName("internal server"))
 //
@@ -168,7 +174,9 @@ func (f *Finisher) Wait() {
 	}
 }
 
-// Trigger the shutdown signal manually. This is probably only useful for testing.
+// Trigger the shutdown signal manually.
+//
+// This is probably only useful for testing.
 func (f *Finisher) Trigger() {
 	f.getManSig() <- nil
 }

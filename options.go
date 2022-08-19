@@ -2,11 +2,12 @@ package finish
 
 import "time"
 
-// Option is what a functional option returns. The function which is returned
-// applies the actual values when invoked later by the Option recipient.
-type Option func(keeper *serverKeeper) error
+// An Option can be used to change the behavior when registering a server via [Finisher.Add].
+type Option option
 
-// WithTimeout overrides the global Finisher.Timeout for this specific server.
+type option func(keeper *serverKeeper) error
+
+// WithTimeout overrides the global [Finisher].Timeout for the server to be registered via [Finisher.Add].
 func WithTimeout(timeout time.Duration) Option {
 	return func(keeper *serverKeeper) error {
 		keeper.timeout = timeout
@@ -14,10 +15,10 @@ func WithTimeout(timeout time.Duration) Option {
 	}
 }
 
-// WithName sets a custom name for the server to register.
+// WithName sets a custom name for the server to be registered via [Finisher.Add].
 //
-// The default name is "server" if there will be only one server registered,
-// otherwise the names default to "server #<num>".
+// If there will be only one server registered, the name defaults to “server”.
+// Otherwise, the names of the servers default to “server #<num>”.
 func WithName(name string) Option {
 	return func(keeper *serverKeeper) error {
 		keeper.name = name

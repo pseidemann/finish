@@ -5,33 +5,34 @@ import (
 	"log"
 )
 
-// Logger is the interface expected by Finisher.Log.
-// It allows using any logger which implements the Infof() and Errorf() methods.
+// Logger is the interface expected by [Finisher].Log.
+//
+// It allows using any loggers which implement the Infof() and Errorf() methods.
 type Logger interface {
-	Infof(string, ...interface{})
-	Errorf(string, ...interface{})
+	Infof(format string, v ...interface{})
+	Errorf(format string, v ...interface{})
 }
 
 // default logger
 
 type defaultLogger struct{}
 
-func (d *defaultLogger) Infof(format string, args ...interface{}) {
-	log.Printf(format, args...)
+func (l *defaultLogger) Infof(format string, v ...interface{}) {
+	log.Printf(format, v...)
 }
 
-func (d *defaultLogger) Errorf(format string, args ...interface{}) {
-	d.Infof(format, args...)
+func (l *defaultLogger) Errorf(format string, v ...interface{}) {
+	l.Infof(format, v...)
 }
 
 // stdout logger
 
 type stdoutLogger struct{}
 
-func (s *stdoutLogger) Infof(format string, args ...interface{}) {
-	fmt.Printf(format+"\n", args...)
+func (l *stdoutLogger) Infof(format string, v ...interface{}) {
+	fmt.Printf(format+"\n", v...)
 }
 
-func (s *stdoutLogger) Errorf(format string, args ...interface{}) {
-	s.Infof(format, args...)
+func (l *stdoutLogger) Errorf(format string, v ...interface{}) {
+	l.Infof(format, v...)
 }
