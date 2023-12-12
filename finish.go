@@ -161,8 +161,7 @@ func (f *Finisher) Wait() {
 		ctx, cancel := context.WithTimeout(context.Background(), keeper.timeout)
 		defer cancel()
 		f.log().Infof("finish: shutting down %s ...", keeper.name)
-		err := keeper.srv.Shutdown(ctx)
-		if err != nil {
+		if err := keeper.srv.Shutdown(ctx); err != nil {
 			if err == context.DeadlineExceeded {
 				f.log().Errorf("finish: shutdown timeout for %s", keeper.name)
 			} else {

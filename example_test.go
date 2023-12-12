@@ -21,8 +21,7 @@ func Example() {
 	fin.Add(srv)
 
 	go func() {
-		err := srv.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()

@@ -35,8 +35,7 @@ func main() {
 	fin.Add(srv)
 
 	go func() {
-		err := srv.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
@@ -99,8 +98,7 @@ func main() {
 	fin.Add(srv)
 
 	go func() {
-		err := srv.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
@@ -141,8 +139,7 @@ func main() {
 	fin.Add(srv)
 
 	go func() {
-		err := srv.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
@@ -183,8 +180,7 @@ func main() {
 	fin.Add(srv)
 
 	go func() {
-		err := srv.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
@@ -242,16 +238,14 @@ func main() {
 
 	go func() {
 		logrus.Infof("starting public server at %s", srvPub.Addr)
-		err := srvPub.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err := srvPub.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
 
 	go func() {
 		logrus.Infof("starting internal server at %s", srvInt.Addr)
-		err := srvInt.ListenAndServe()
-		if err != http.ErrServerClosed {
+		if err := srvInt.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()

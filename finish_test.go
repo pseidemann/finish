@@ -267,8 +267,7 @@ func TestOptionError(t *testing.T) {
 	fin := New()
 	func() {
 		defer func() {
-			err := recover()
-			if err != errTest {
+			if err := recover(); err != errTest {
 				t.Error("expected Add() to panic")
 			}
 		}()
