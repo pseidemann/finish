@@ -7,6 +7,8 @@
 A non-intrusive package, adding a graceful shutdown to Go's HTTP server, by
 utilizing `http.Server`'s built-in `Shutdown()` method, with zero dependencies.
 
+Requires Go 1.18 or later.
+
 
 ## Quick Start
 

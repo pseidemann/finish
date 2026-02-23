@@ -41,11 +41,11 @@ type logRecorder struct {
 	errors []string
 }
 
-func (l *logRecorder) Infof(format string, args ...interface{}) {
+func (l *logRecorder) Infof(format string, args ...any) {
 	l.infos = append(l.infos, fmt.Sprintf(format, args...))
 }
 
-func (l *logRecorder) Errorf(format string, args ...interface{}) {
+func (l *logRecorder) Errorf(format string, args ...any) {
 	l.errors = append(l.errors, fmt.Sprintf(format, args...))
 }
 
@@ -86,7 +86,7 @@ func captureLog(f func()) string {
 	return buf.String()
 }
 
-func Test(t *testing.T) {
+func TestShutdown(t *testing.T) {
 	srv := &testServer{wait: time.Second}
 	log := &logRecorder{}
 

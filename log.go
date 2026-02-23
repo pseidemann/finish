@@ -9,19 +9,19 @@ import (
 //
 // It allows using any loggers which implement the Infof() and Errorf() methods.
 type Logger interface {
-	Infof(format string, v ...interface{})
-	Errorf(format string, v ...interface{})
+	Infof(format string, v ...any)
+	Errorf(format string, v ...any)
 }
 
 // default logger
 
 type defaultLogger struct{}
 
-func (l *defaultLogger) Infof(format string, v ...interface{}) {
+func (l *defaultLogger) Infof(format string, v ...any) {
 	log.Printf(format, v...)
 }
 
-func (l *defaultLogger) Errorf(format string, v ...interface{}) {
+func (l *defaultLogger) Errorf(format string, v ...any) {
 	l.Infof(format, v...)
 }
 
@@ -29,10 +29,10 @@ func (l *defaultLogger) Errorf(format string, v ...interface{}) {
 
 type stdoutLogger struct{}
 
-func (l *stdoutLogger) Infof(format string, v ...interface{}) {
+func (l *stdoutLogger) Infof(format string, v ...any) {
 	fmt.Printf(format+"\n", v...)
 }
 
-func (l *stdoutLogger) Errorf(format string, v ...interface{}) {
+func (l *stdoutLogger) Errorf(format string, v ...any) {
 	l.Infof(format, v...)
 }

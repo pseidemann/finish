@@ -5,6 +5,7 @@ package finish
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -17,7 +18,7 @@ import (
 const DefaultTimeout = 10 * time.Second
 
 var (
-	// DefaultLogger is used if Finisher.Logger is not set.
+	// DefaultLogger is used if [Finisher].Log is not set.
 	// It uses the Go standard log package.
 	DefaultLogger = &defaultLogger{}
 	// StdoutLogger can be used as a simple logger which writes to stdout
@@ -66,7 +67,7 @@ type Finisher struct {
 
 	mutex   sync.Mutex
 	keepers []*serverKeeper
-	manSig  chan interface{}
+	manSig  chan struct{}
 }
 
 // New creates a Finisher.
@@ -97,11 +98,11 @@ func (f *Finisher) timeout() time.Duration {
 	return DefaultTimeout
 }
 
-func (f *Finisher) getManSig() chan interface{} {
+func (f *Finisher) getManSig() chan struct{} {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 	if f.manSig == nil {
-		f.manSig = make(chan interface{}, 1)
+		f.manSig = make(chan struct{}, 1)
 	}
 	return f.manSig
 }
@@ -158,18 +159,22 @@ func (f *Finisher) Wait() {
 	f.log().Infof("finish: shutdown signal received")
 
 	for _, keeper := range f.keepers {
-		ctx, cancel := context.WithTimeout(context.Background(), keeper.timeout)
-		defer cancel()
-		f.log().Infof("finish: shutting down %s ...", keeper.name)
-		if err := keeper.srv.Shutdown(ctx); err != nil {
-			if err == context.DeadlineExceeded {
-				f.log().Errorf("finish: shutdown timeout for %s", keeper.name)
-			} else {
-				f.log().Errorf("finish: error while shutting down %s: %s", keeper.name, err)
-			}
+		f.shutdownServer(keeper)
+	}
+}
+
+func (f *Finisher) shutdownServer(keeper *serverKeeper) {
+	ctx, cancel := context.WithTimeout(context.Background(), keeper.timeout)
+	defer cancel()
+	f.log().Infof("finish: shutting down %s ...", keeper.name)
+	if err := keeper.srv.Shutdown(ctx); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			f.log().Errorf("finish: shutdown timeout for %s", keeper.name)
 		} else {
-			f.log().Infof("finish: %s closed", keeper.name)
+			f.log().Errorf("finish: error while shutting down %s: %s", keeper.name, err)
 		}
+	} else {
+		f.log().Infof("finish: %s closed", keeper.name)
 	}
 }
 
@@ -177,7 +182,7 @@ func (f *Finisher) Wait() {
 //
 // This is probably only useful for testing.
 func (f *Finisher) Trigger() {
-	f.getManSig() <- nil
+	f.getManSig() <- struct{}{}
 }
 
 func (f *Finisher) updateNames() {
